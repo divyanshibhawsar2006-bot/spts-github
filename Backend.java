@@ -17,14 +17,14 @@ import java.nio.file.Paths;
  * - Zero third-party build dependencies required
  * - Handles static file serving (HTML, JS, CSS, JSON)
  * - Exposes REST endpoints to read and persist records in data.json:
- *     GET  /api/data        -> Returns full database JSON
- *     POST /api/save        -> Persists modified JSON data directly to data.json
- *     POST /api/login       -> Validates role-specific authentication
- *     POST /api/change-pass -> Updates credentials securely
+ * GET /api/data -> Returns full database JSON
+ * POST /api/save -> Persists modified JSON data directly to data.json
+ * POST /api/login -> Validates role-specific authentication
+ * POST /api/change-pass -> Updates credentials securely
  */
 public class Backend {
 
-    private static final int PORT = 8080;
+    private static final int PORT = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
     private static final String DATA_FILE = "data.json";
 
     public static void main(String[] args) throws IOException {
@@ -108,7 +108,8 @@ public class Backend {
                     Files.write(Paths.get(DATA_FILE), body.getBytes(StandardCharsets.UTF_8));
                 }
 
-                sendJsonResponse(exchange, 200, "{\"success\": true, \"message\": \"Data successfully saved to data.json on disk!\"}");
+                sendJsonResponse(exchange, 200,
+                        "{\"success\": true, \"message\": \"Data successfully saved to data.json on disk!\"}");
             } else {
                 sendJsonResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
             }
@@ -150,7 +151,8 @@ public class Backend {
                 }
 
                 int blockEnd = currentData.indexOf("}", userIndex);
-                if (blockEnd == -1) blockEnd = currentData.length();
+                if (blockEnd == -1)
+                    blockEnd = currentData.length();
                 String userBlock = currentData.substring(userIndex, blockEnd);
 
                 String realPass = extractJsonField(userBlock, "password");
@@ -162,11 +164,13 @@ public class Backend {
                 }
 
                 if (!role.equalsIgnoreCase(realRole)) {
-                    sendJsonResponse(exchange, 403, "{\"success\": false, \"message\": \"This ID is registered as " + realRole + " only.\"}");
+                    sendJsonResponse(exchange, 403,
+                            "{\"success\": false, \"message\": \"This ID is registered as " + realRole + " only.\"}");
                     return;
                 }
 
-                sendJsonResponse(exchange, 200, "{\"success\": true, \"message\": \"Login authorized by Java backend.\"}");
+                sendJsonResponse(exchange, 200,
+                        "{\"success\": true, \"message\": \"Login authorized by Java backend.\"}");
             } else {
                 sendJsonResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
             }
@@ -192,7 +196,8 @@ public class Backend {
                 String newPass = extractJsonField(body, "newPassword");
 
                 if (newPass.length() < 6) {
-                    sendJsonResponse(exchange, 400, "{\"success\": false, \"message\": \"Password must be at least 6 characters.\"}");
+                    sendJsonResponse(exchange, 400,
+                            "{\"success\": false, \"message\": \"Password must be at least 6 characters.\"}");
                     return;
                 }
 
@@ -211,16 +216,19 @@ public class Backend {
                     String stored = extractJsonField(block, "password");
 
                     if (!stored.equals(oldPass)) {
-                        sendJsonResponse(exchange, 400, "{\"success\": false, \"message\": \"Current password incorrect.\"}");
+                        sendJsonResponse(exchange, 400,
+                                "{\"success\": false, \"message\": \"Current password incorrect.\"}");
                         return;
                     }
 
-                    String updatedBlock = block.replaceFirst("\"password\":\\s*\"" + stored + "\"", "\"password\": \"" + newPass + "\"");
+                    String updatedBlock = block.replaceFirst("\"password\":\\s*\"" + stored + "\"",
+                            "\"password\": \"" + newPass + "\"");
                     String newData = data.substring(0, uIdx) + updatedBlock + data.substring(bEnd);
                     Files.write(file.toPath(), newData.getBytes(StandardCharsets.UTF_8));
                 }
 
-                sendJsonResponse(exchange, 200, "{\"success\": true, \"message\": \"Password updated successfully in Java backend!\"}");
+                sendJsonResponse(exchange, 200,
+                        "{\"success\": true, \"message\": \"Password updated successfully in Java backend!\"}");
             } else {
                 sendJsonResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
             }
@@ -249,10 +257,14 @@ public class Backend {
             }
 
             String contentType = "text/plain";
-            if (path.endsWith(".html")) contentType = "text/html; charset=UTF-8";
-            else if (path.endsWith(".js")) contentType = "application/javascript; charset=UTF-8";
-            else if (path.endsWith(".css")) contentType = "text/css; charset=UTF-8";
-            else if (path.endsWith(".json")) contentType = "application/json; charset=UTF-8";
+            if (path.endsWith(".html"))
+                contentType = "text/html; charset=UTF-8";
+            else if (path.endsWith(".js"))
+                contentType = "application/javascript; charset=UTF-8";
+            else if (path.endsWith(".css"))
+                contentType = "text/css; charset=UTF-8";
+            else if (path.endsWith(".json"))
+                contentType = "application/json; charset=UTF-8";
 
             exchange.getResponseHeaders().set("Content-Type", contentType);
             addCorsHeaders(exchange);
@@ -305,4 +317,3 @@ public class Backend {
         return "";
     }
 }
-
